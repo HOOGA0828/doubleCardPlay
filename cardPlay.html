@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <title>大富翁</title>
+    <style>
+      body {
+        background-color: rgb(97, 145, 173);
+      }
+      header {
+        height: 100px;
+        background-color: rgb(118, 242, 247);
+        margin-bottom: 30px;
+      }
+      .card {
+        max-width: 180px;
+        height: 230px;
+        border: black 1px solid;
+        margin: 10px;
+        background-color: bisque;
+        border-radius: 20px;
+        transform-style: preserve-3d;
+        transition: 0.5s;
+        position: relative;
+      }
+      .card.flip {
+        transform: rotateY(180deg);
+      }
+      .card:hover {
+        cursor: pointer;
+      }
+      .card h1 {
+        line-height: 230px;
+        font-size: 80px;
+      }
+      .front-face {
+        /* position: absolute; */
+        backface-visibility: hidden;
+        transform: rotateY(180deg);
+      }
+      .back-face {
+        width: 180px;
+        height: 230px;
+        background-color: rgb(235, 98, 52);
+        border: black 1px solid;
+        border-radius: 20px;
+        position: absolute;
+        /* 未知原因跑掉 */
+        margin-left: -13px;
+        backface-visibility: hidden;
+      }
+      .playground {
+        perspective: 1000px;
+      }
+      #playAgain {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container d-flex justify-content-center">
+        <!-- 卡片組合數 -->
+        <div class="mx-5 mt-3">
+          <select
+            class="form-select"
+            aria-label="Default select example"
+            id="numSelect"
+          >
+            <option selected value="3">卡片組合數(預設3)</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+        <!-- 嘗試次數 -->
+        <div class="mx-5 mt-4 h4">嘗試次數 : <span id="clickCount">0</span></div>
+        <!-- 再來一局 -->
+        <button type="button" class="btn btn-primary ms-5 mt-2" id="playAgain">
+          再來一局
+        </button>
+      </div>
+    </header>
+    <!-- 卡片頁面 -->
+    <div class="mainbg">
+      <div class="container">
+        <div id="playground" class="container row"></div>
+      </div>
+    </div>
+    <script
+      src="https://code.jquery.com/jquery-3.6.0.min.js"
+      integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      let cardCount = 3;
+      let cardArr = [];
+      let clickCount = 0;
+      let completeCount = 0;
+
+      // 製作遊戲
+      let gameCreate = async function () {
+        await cardArrCreate();
+        await fisherYatesShuffle(cardArr);
+        await cardCreate(cardArr);
+
+        // 點擊確認相符
+        let doubleCheckArr = [];
+        let okNum = [];
+        let success = true;
+
+        $(".card").on("click", function () {
+          // 判斷點擊是否要重來
+          if (success) {
+          } else {
+            // 取消轉牌
+            doubleCheckArr.map((x) => {
+              $(`#card${x}`).removeClass("flip");
+            });
+            doubleCheckArr = [];
+            success = true;
+          }
+          // 給予轉牌效果
+          $(this).addClass("flip");
+
+          // 確認有兩個被選中
+          if (doubleCheckArr.length < 2) {
+            doubleCheckArr.push($(this).data("num"));
+            console.log(doubleCheckArr);
+            // 判斷選到一樣的
+            if (
+              Math.abs(doubleCheckArr[0] - doubleCheckArr[1]) == 50 &&
+              doubleCheckArr.length == 2
+            ) {
+              changeColor($(this).data("num"));
+              doubleCheckArr = [];
+              // 處理點擊次數
+              clickCount++;
+              $("#clickCount").text(clickCount);
+              // 處理是否完成遊戲
+              completeCount++;
+              if (completeCount == cardCount) {
+                $("#playAgain").css("display", "block");
+                completeCount = 0;
+              }
+              // 判斷選到不一樣的
+            } else if (
+              doubleCheckArr[0] !== doubleCheckArr[1] &&
+              doubleCheckArr.length == 2
+            ) {
+              // 處理點擊次數
+
+              clickCount++;
+              $("#clickCount").text(clickCount);
+              success = false;
+              // 處理同張卡片點及兩次
+            } else if (
+              doubleCheckArr[0] == doubleCheckArr[1] &&
+              doubleCheckArr.length == 2
+            ) {
+              // 牌轉回去
+              $(`#card${doubleCheckArr[0]}`).removeClass("flip");
+              // 處理點擊次數
+              clickCount++;
+              $("#clickCount").text(clickCount);
+              // 清空確認ARR
+              doubleCheckArr = [];
+            }
+          }
+        });
+      };
+      // 瀏覽器啟動
+      window.onload = async function () {
+        await gameCreate();
+      };
+      // 製作卡片數量的ARR
+      let cardArrCreate = function () {
+        for (let i = 1; i <= cardCount; i++) {
+          cardArr.push(i);
+          cardArr.push(i);
+        }
+        return cardArr;
+      };
+      // 隨機打亂陣列
+      let fisherYatesShuffle = function (arr) {
+        for (var i = arr.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1)); //random index
+          [arr[i], arr[j]] = [arr[j], arr[i]]; // swap
+        }
+        cardArr = arr;
+        return cardArr;
+      };
+
+      //創造卡片
+      let cardCreate = function (arr) {
+        let cardContent = "";
+        let doubleCheck = [];
+        for (let i = 0; i < arr.length; i++) {
+          if (doubleCheck.includes(arr[i])) {
+            cardContent += `<div class="card text-center" id="card${
+              arr[i] + 50
+            }" data-num="${arr[i] + 50}""><div class="front-face"><h1>${
+              arr[i]
+            }</h1></div><div class="back-face"></div></div>`;
+            continue;
+          }
+          cardContent += `<div class="card text-center" id="card${arr[i]}" data-num="${arr[i]}""><div class="front-face"><h1>${arr[i]}</h1></div><div class="back-face"></div></div>`;
+          doubleCheck.push(arr[i]);
+        }
+
+        playground.innerHTML = cardContent;
+      };
+
+      // 組合成功給螢光跟取消點擊
+      function changeColor(targetNum) {
+        // 給螢光
+        $(`#card${targetNum}`).css("box-shadow", "0 0 15px 5px #f3d42e")
+        $(`#card${targetNum + 50}`).css("box-shadow", "0 0 15px 5px #f3d42e")
+        $(`#card${targetNum - 50}`).css("box-shadow", "0 0 15px 5px #f3d42e")
+        // 取消點擊事件
+        $(`#card${targetNum}`).prop("onclick", null).off("click");
+        $(`#card${targetNum + 50}`)
+          .prop("onclick", null)
+          .off("click");
+        $(`#card${targetNum - 50}`)
+          .prop("onclick", null)
+          .off("click");
+      }
+
+      // 數量選擇改變
+      $("#numSelect").on("change", function () {
+        if (this.value > 0) {
+          // 再來一局按鈕消失
+          $("#playAgain").css("display", "none");
+          cardArr = [];
+          // 點擊次數歸零
+          clickCount = 0;
+          $("#clickCount").text(0);
+          cardCount = this.value;
+          gameCreate();
+        }
+      });
+      // 處理再來一局
+      $("#playAgain").click(function () {
+        cardArr = [];
+        // 點擊次數歸零
+        clickCount = 0;
+        $("#clickCount").text(0);
+        // 再來一局按鈕消失
+        $("#playAgain").css("display", "none");
+        // 設定盤組數
+        cardCount = $("#numSelect").val();
+        gameCreate();
+      });
+      
+    </script>
+  </body>
+</html>

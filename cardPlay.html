@@ -27,11 +27,14 @@
         margin: 10px;
         background-color: bisque;
         border-radius: 20px;
+        -webkit-transform-style: preserve-3d;
+        -webkit-transition: 0.5s;
         transform-style: preserve-3d;
         transition: 0.5s;
         position: relative;
       }
       .card.flip {
+        -webkit-transform: rotateY(180deg);
         transform: rotateY(180deg);
       }
       .card:hover {
@@ -43,7 +46,9 @@
       }
       .front-face {
         /* position: absolute; */
+        -webkit-backface-visibility: hidden ;
         backface-visibility: hidden;
+        -webkit-transform: rotateY(180deg);
         transform: rotateY(180deg);
       }
       .back-face {
@@ -55,9 +60,11 @@
         position: absolute;
         /* 未知原因跑掉 */
         margin-left: -13px;
+        -webkit-backface-visibility: hidden ;
         backface-visibility: hidden;
       }
       .playground {
+        -webkit-perspective: 1000px;
         perspective: 1000px;
       }
       #playAgain {
